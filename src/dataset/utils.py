@@ -4,17 +4,18 @@ from pathlib import Path
 import pandas as pd
 def create_char_mapping(labels:List[str], special_chars:List[str]=[])->Tuple[Dict[str, int],list]:
     
-    uniq_chars = set(special_chars)
+    uniq_chars = set()
     for label in labels:
         for ch in label:
             uniq_chars.add(ch)
     
-    idx_to_char = []
-    char_to_idx = {}
+    idx_to_char = [*special_chars]
+    char_to_idx = {idx:ch for idx, ch in enumerate(special_chars)}
 
+    prefix = len(idx_to_char)
     for idx, char in enumerate(uniq_chars):
         idx_to_char.append(char)
-        char_to_idx[char] = idx
+        char_to_idx[char] = prefix+idx
 
     return char_to_idx, idx_to_char            
 
@@ -34,7 +35,7 @@ if __name__ == "__main__":
 
 
     labels_df = pd.read_csv("data/labels.csv", header=0)
-    char_to_idx, idx_to_char = create_char_mapping(labels_df["text"].tolist(), ["<PAD>", "EOS", "SOS"])
+    char_to_idx, idx_to_char = create_char_mapping(labels_df["text"].tolist(), ["<PAD>", "<EOS>", "<SOS>"])
     print(len(idx_to_char))
-
+    print(char_to_idx)
     print(tokenize("Привет, мир", char_to_idx))
