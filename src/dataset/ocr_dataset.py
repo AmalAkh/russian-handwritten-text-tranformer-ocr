@@ -2,25 +2,29 @@ from torch.utils.data import Dataset
 from pathlib import Path
 import pandas as pd 
 from torchvision import transforms
-
+import sys
+from pathlib import Path
+from typing import Tuple
 
 from torchvision.io import decode_image
 import torch
 import os
 from PIL import Image
-from utils import tokenize
+from src.dataset.utils import tokenize, pad_sequence
 
 
 class OCRDataset(Dataset):
 
-    def __init__(self, images_dir_path:str|Path, labels_path:str|Path, char_to_idx:dict):
+    def __init__(self, images_dir_path:str|Path, labels_path:str|Path, char_to_idx:dict,max_seq_len:int, resize:Tuple[int,int]=(384,384)):
         self.images_dir_path = images_dir_path
         self.labels_path = labels_path
         self.char_to_idx = char_to_idx
 
+        self.max_seq_len = max_seq_len
+
         self.tranform = transforms.Compose([
             transforms.ToTensor(),
-            transforms.Resize((50, 150))
+            transforms.Resize(resize)
         ])
         
 
@@ -49,7 +53,8 @@ class OCRDataset(Dataset):
         if label is None:
             text = self.labels_df["text"][index]
             label = tokenize(text, self.char_to_idx)
-            label = torch.Tensor(label)
+            label = pad_sequence(label, self.max_seq_len)
+            label = torch.tensor(label, dtype=torch.int32)
             self.labels[index] = label
             
 
@@ -61,8 +66,7 @@ class OCRDataset(Dataset):
 
 
 if __name__ == "__main__":
-    SCRIPT_DIR = Path(__file__).resolve().parent
-    PROJECT_ROOT = SCRIPT_DIR.parent.parent  
+
 
     from utils import create_char_mapping
     labels_df = pd.read_csv("data/labels.csv", header=0)

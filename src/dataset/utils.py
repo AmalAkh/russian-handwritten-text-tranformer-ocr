@@ -28,6 +28,19 @@ def tokenize(word: str, char_to_idx: Union[Dict[str, int], List[str]]) -> List[i
         
     return [char_to_idx[char] for char in word if char in char_to_idx]
 
+def pad_sequence(seq:List[int],max_len:int, pad_token:int=0):
+
+    return seq+([pad_token]*(max_len-len(seq)))
+
+def get_max_lbl_len(labels:List[str]):
+    return max([len(lbl) for lbl in labels])
+
+def filter_non_existant_files(labels_df:pd.DataFrame, data_dir:str|Path):
+    df = labels_df.copy()
+    df["exists"] = labels_df["file_name"].apply( lambda x: os.path.exists(os.path.join(data_dir, str(x)))) == True
+    return df[df["exists"]]
+
+
 
 if __name__ == "__main__":
     SCRIPT_DIR = Path(__file__).resolve().parent
@@ -35,7 +48,15 @@ if __name__ == "__main__":
 
 
     labels_df = pd.read_csv("data/labels.csv", header=0)
+    print(len(labels_df))
+
+    print(pad_sequence([1,2,3], 10))
+
+    filtered_df = filter_non_existant_files(labels_df, "data/images")
+    filtered_df.to_csv("data/filtered_labels.csv")
+    print(len(filtered_df))
     char_to_idx, idx_to_char = create_char_mapping(labels_df["text"].tolist(), ["<PAD>", "<EOS>", "<SOS>"])
     print(len(idx_to_char))
     print(char_to_idx)
     print(tokenize("Привет, мир", char_to_idx))
+
