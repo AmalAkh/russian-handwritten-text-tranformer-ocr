@@ -3,6 +3,7 @@ import torch
 import torch.nn as nn
 from torch.nn import TransformerDecoderLayer
 from torch.utils.data import DataLoader
+from torchmetrics import Accuracy, CharErrorRate
 
 class OCRTransformer(nn.Module):
 
@@ -35,6 +36,9 @@ class OCRTransformer(nn.Module):
         self.optimizer = torch.optim.Adam(self.parameters())
         self.to(device)
 
+
+        self.accuracy = Accuracy(task="multiclass", num_classes=vocab_size).to(device=self.device)
+        self.cer = CharErrorRate().to(device=self.device)
 
 
 
@@ -86,18 +90,66 @@ class OCRTransformer(nn.Module):
             )
 
             return self.output_layer(decoder_output)
+    
+    def evaluate(self, dataloader:DataLoader):
         
+        with torch.no_grad():
+            
+            self.accuracy.reset()
+            self.cer.reset()
+            val_loss = 0
+
+            for x,y in dataloader:
+               
+                x = x.to(self.device)
+
+                y =  y.to(dtype=torch.long, device=self.device).contiguous()
+                output = self.forward(x, y)
+               
+
+                output_for_metrics = output.argmax(dim=2).int()
+             
+                # compute metrics
+                self.accuracy(output_for_metrics, y)
+                self.cer(output_for_metrics, y)
+
+                loss = self.loss_fn(output.permute(0, 2, 1), y)
+
+                val_loss += loss.item()
+
+
+        val_loss /= len(dataloader)
+        epoch_accuracy = self.accuracy.compute().item()
+        epoch_cer = self.cer.compute().item()
+
+        return val_loss, epoch_accuracy, epoch_cer
+            
+
     def fit(self, train_dataloader:DataLoader, val_dataloader:DataLoader, epochs:int=10):
 
         for epoch in range(0, epochs):
+
+            epoch_loss = 0
+
+            self.accuracy.reset()
+            self.cer.reset()
+
             for x,y in train_dataloader:
                
                 x,y = x.to(self.device), y.to(self.device)
                 y = y.long()
                 output = self.forward(x, y)
-                print(output.size())
+               
 
-                loss = self.loss_fn(output.permute(0, 2, 1),y)
+                output_for_metrics = output.argmax(dim=2).int()
+             
+                # compute metrics
+                self.accuracy(output_for_metrics, y)
+                self.cer(output_for_metrics, y)
+
+                loss = self.loss_fn(output.permute(0, 2, 1), y)
+
+                epoch_loss += loss.item()
 
                 
                 
@@ -105,8 +157,14 @@ class OCRTransformer(nn.Module):
                 loss.backward()
                 self.optimizer.step()
 
-            
-                
+            epoch_loss /= len(train_dataloader)
+            epoch_accuracy = self.accuracy.compute().item()
+            epoch_cer = self.cer.compute().item()
+
+            val_loss, val_accuracy, val_cer = self.evaluate(val_dataloader)
+
+
+            print(f"Epoch #{epoch+1}: Train Loss: {epoch_loss:.4f} Train Accuracy: {epoch_accuracy:.4f} Train CER: {epoch_cer:.4f} Val Loss: {val_loss} Val Accuracy: {val_accuracy} Val CER: {val_cer}")
 
 
 
