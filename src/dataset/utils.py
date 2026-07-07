@@ -28,6 +28,13 @@ def tokenize(word: str, char_to_idx: Union[Dict[str, int], List[str]]) -> List[i
         
     return [char_to_idx[char] for char in word if char in char_to_idx]
 
+def untokenize(tokens:List[int], idx_to_char:List[str]):
+    
+    return "".join([idx_to_char[token] for token in tokens])
+
+def remove_speical_chars(tokens:List[int], special_char:List[int]):   
+    return list(filter(lambda ch: ch not in special_char, tokens))
+
 def pad_sequence(seq:List[int],max_len:int, pad_token:int=0):
 
     return seq+([pad_token]*(max_len-len(seq)))

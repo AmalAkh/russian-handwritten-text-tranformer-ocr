@@ -19,6 +19,10 @@ import pandas as pd
 import torch
 from torch.utils.data import DataLoader, random_split
 
+NUM_WORKERS = 8
+
+
+
 if torch.cuda.is_available():
     device_name = "cuda"
 elif torch.backends.mps.is_available():
@@ -52,9 +56,10 @@ train_dataset, val_dataset, test_dataset = random_split(
 
 # 3. Create DataLoaders for each split
 # It's standard practice to shuffle the training data, but not val/test data
-train_dataloader = DataLoader(train_dataset, batch_size=12, shuffle=True)
-val_dataloader = DataLoader(val_dataset, batch_size=12, shuffle=False)
-test_dataloader = DataLoader(test_dataset, batch_size=12, shuffle=False)
+
+train_dataloader = DataLoader(train_dataset, batch_size=32, shuffle=True, num_workers=NUM_WORKERS)
+val_dataloader = DataLoader(val_dataset, batch_size=32, shuffle=False, num_workers=NUM_WORKERS)
+test_dataloader = DataLoader(test_dataset, batch_size=32, shuffle=False, num_workers=NUM_WORKERS)
 
 print(f"Total dataset size:  {total_size}")
 print(f"Training set size:   {len(train_dataset)}")
@@ -62,8 +67,6 @@ print(f"Validation set size: {len(val_dataset)}")
 print(f"Test set size:       {len(test_dataset)}")
 print("-" * 30)
 
-
-train_dataloader = DataLoader(dataset, batch_size=12)
 
 transformer = OCRTransformer(len(char_to_idx), max_seq_len, device=device_name)
 
