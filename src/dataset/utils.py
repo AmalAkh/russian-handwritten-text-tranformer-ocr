@@ -48,7 +48,6 @@ def filter_non_existant_files(labels_df:pd.DataFrame, data_dir:str|Path):
     return df[df["exists"]]
 
 
-
 if __name__ == "__main__":
     SCRIPT_DIR = Path(__file__).resolve().parent
     PROJECT_ROOT = SCRIPT_DIR.parent.parent  

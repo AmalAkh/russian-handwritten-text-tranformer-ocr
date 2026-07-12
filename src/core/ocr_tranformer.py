@@ -4,6 +4,7 @@ import torch.nn as nn
 from torch.nn import TransformerDecoderLayer
 from torch.utils.data import DataLoader
 from torchmetrics import Accuracy, CharErrorRate
+from src.core.utils import EpochModelCallBack
 
 class OCRTransformer(nn.Module):
 
@@ -125,7 +126,7 @@ class OCRTransformer(nn.Module):
         return val_loss, epoch_accuracy, epoch_cer
             
 
-    def fit(self, train_dataloader:DataLoader, val_dataloader:DataLoader, epochs:int=10):
+    def fit(self, train_dataloader:DataLoader, val_dataloader:DataLoader, epochs:int=10, epoch_callback:EpochModelCallBack=None):
 
         for epoch in range(0, epochs):
 
@@ -163,6 +164,8 @@ class OCRTransformer(nn.Module):
 
             val_loss, val_accuracy, val_cer = self.evaluate(val_dataloader)
 
+            if epoch_callback is not None:
+                epoch_callback(epoch, epoch_loss, epoch_accuracy, epoch_cer, val_loss, val_accuracy, val_cer)
 
             print(f"Epoch #{epoch+1}: Train Loss: {epoch_loss:.4f} Train Accuracy: {epoch_accuracy:.4f} Train CER: {epoch_cer:.4f} Val Loss: {val_loss} Val Accuracy: {val_accuracy} Val CER: {val_cer}")
 
