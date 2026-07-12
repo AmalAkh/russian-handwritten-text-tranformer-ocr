@@ -5,7 +5,7 @@ from torch.nn import TransformerDecoderLayer
 from torch.utils.data import DataLoader
 from torchmetrics import Accuracy, CharErrorRate
 from src.core.utils import EpochModelCallBack
-
+import os
 from tqdm import tqdm
 
 class OCRTransformer(nn.Module):
@@ -177,7 +177,8 @@ class OCRTransformer(nn.Module):
 
             if epoch_callback is not None:
                 epoch_callback(epoch, epoch_loss, epoch_accuracy, epoch_cer, val_loss, val_accuracy, val_cer)
-
+            
+            torch.save(self.state_dict(), os.path.join("models", f"model-{epoch}e.pth"))
             print(f"Epoch #{epoch+1}: Train Loss: {epoch_loss:.4f} Train Accuracy: {epoch_accuracy:.4f} Train CER: {epoch_cer:.4f} Val Loss: {val_loss} Val Accuracy: {val_accuracy} Val CER: {val_cer}")
 
 
