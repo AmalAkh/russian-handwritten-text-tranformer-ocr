@@ -11,7 +11,7 @@ class EpochModelCallBack:
         self.call(epoch, epoch_train_loss, epoch_train_acc, epoch_train_cer, epoch_val_loss, epoch_val_acc, epoch_train_cer)
 
 
-class WandDBCallBack:
+class WandDBCallBack(EpochModelCallBack):
     def __init__(self,run_name:str, config:dict):
         self.run = wandb.init(
             name=run_name,

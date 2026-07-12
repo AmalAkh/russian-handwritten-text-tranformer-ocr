@@ -10,7 +10,7 @@ class OCRTransformer(nn.Module):
 
     def __init__(self, vocab_size:int,max_seq_len:int, pad_idx:int=0, sos_idx:int=1, eos_idx:int=2, 
                 d_model:int=1024, dim_feedforward=2048, num_decoder_heads:int=16, num_decoder_layers:int=8,
-                loss_fn=nn.CrossEntropyLoss(), device:str="cpu"):
+                loss_fn=nn.CrossEntropyLoss(), pretrained_vit_model='google/vit-large-patch32-384', train_pretrained_vit_encoder=True, device:str="cpu"):
         super().__init__()
 
         self.loss_fn = loss_fn
@@ -23,7 +23,11 @@ class OCRTransformer(nn.Module):
         self.sos_idx = sos_idx
         self.eos_idx = eos_idx
 
-        self.encoder = ViTModel.from_pretrained('google/vit-large-patch32-384')
+        self.encoder = ViTModel.from_pretrained(pretrained_vit_model)
+
+        if not(train_pretrained_vit_encoder):
+            for param in self.encoder.parameters():
+                param.requires_grad = False
         self.embedding = nn.Embedding(vocab_size, d_model, padding_idx=pad_idx)
 
         decoder_layer = TransformerDecoderLayer(d_model,num_decoder_heads, dim_feedforward, batch_first=True)
@@ -33,9 +37,9 @@ class OCRTransformer(nn.Module):
         
         self.output_layer = nn.Linear(d_model, vocab_size)
 
+        self.to(device)
 
         self.optimizer = torch.optim.Adam(self.parameters())
-        self.to(device)
 
 
         self.accuracy = Accuracy(task="multiclass", num_classes=vocab_size).to(device=self.device)
@@ -47,7 +51,10 @@ class OCRTransformer(nn.Module):
         
         encoded_input = self.encoder(img).last_hidden_state
 
+        print(encoded_input.size())
+
         if target_label.size()[1] == 1:
+            print("do")
             finished = torch.zeros(target_label.size(0), dtype=torch.bool, device=target_label.device)
             for i in range(0, self.max_seq_len):
 
@@ -100,8 +107,8 @@ class OCRTransformer(nn.Module):
             self.cer.reset()
             val_loss = 0
 
-            for x,y in dataloader:
-               
+            for idx, (x,y) in enumerate(dataloader):
+                
                 x = x.to(self.device)
 
                 y =  y.to(dtype=torch.long, device=self.device).contiguous()
@@ -117,6 +124,8 @@ class OCRTransformer(nn.Module):
                 loss = self.loss_fn(output.permute(0, 2, 1), y)
 
                 val_loss += loss.item()
+
+               
 
 
         val_loss /= len(dataloader)
@@ -135,7 +144,7 @@ class OCRTransformer(nn.Module):
             self.accuracy.reset()
             self.cer.reset()
 
-            for x,y in train_dataloader:
+            for idx, (x,y) in enumerate(train_dataloader):
                
                 x,y = x.to(self.device), y.to(self.device)
                 y = y.long()

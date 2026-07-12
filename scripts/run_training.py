@@ -9,8 +9,6 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 sys.path.append(str(PROJECT_ROOT))
 
 from src.config.settings import Settings
-
-
 from src.core.ocr_tranformer import OCRTransformer
 from src.dataset.ocr_dataset import OCRDataset
 from src.dataset.utils import create_char_mapping, get_max_lbl_len
@@ -35,7 +33,7 @@ char_to_idx, _ = create_char_mapping(labels_df["text"].tolist(), ["<PAD>", "EOS"
 max_seq_len = get_max_lbl_len(labels_df["text"])
 
 # Initialize your full dataset
-dataset = OCRDataset("data/images", "data/filtered_labels.csv", char_to_idx, max_seq_len)
+dataset = OCRDataset("data/images", "data/filtered_labels.csv", char_to_idx, max_seq_len, resize=Settings.RESIZE_IMAGE)
 
 # 1. Define split sizes using Settings
 total_size = len(dataset)
@@ -77,8 +75,11 @@ print(f"Test set size:       {len(test_dataset)}")
 print("-" * 30)
 
 # --- Model Initialization & Training ---
-transformer = OCRTransformer(len(char_to_idx), max_seq_len, device=device_name)
+transformer = OCRTransformer(len(char_to_idx), max_seq_len, 
+                            d_model=Settings.D_MODEL, 
+                            pretrained_vit_model=Settings.PRETRAINED_VIT_ENCODER, 
+                            train_pretrained_vit_encoder=Settings.TRAIN_VIT_ENCODER, 
+                            device=device_name)
 
 print(device_name)
 transformer.fit(val_dataloader, val_dataloader, epochs=Settings.EPOCHS, epoch_callback=wandb_callback)
-print(transformer.evaluate(val_dataloader))
