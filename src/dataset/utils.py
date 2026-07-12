@@ -2,6 +2,8 @@ import os
 from typing import List, Tuple, Dict, Union
 from pathlib import Path
 import pandas as pd
+from PIL import Image
+
 def create_char_mapping(labels:List[str], special_chars:List[str]=[])->Tuple[Dict[str, int],list]:
     
     uniq_chars = set()
@@ -46,7 +48,27 @@ def filter_non_existant_files(labels_df:pd.DataFrame, data_dir:str|Path):
     df = labels_df.copy()
     df["exists"] = labels_df["file_name"].apply( lambda x: os.path.exists(os.path.join(data_dir, str(x)))) == True
     return df[df["exists"]]
+def filter_corrupted_and_missing_images(labels_df: pd.DataFrame, data_dir: str | Path) -> pd.DataFrame:
+    df = labels_df.copy()
+    
+    def is_valid_image(file_name):
+        file_path = os.path.join(data_dir, str(file_name))
+        try:
+            # Using a context manager ensures the file pointer is closed immediately
+            with Image.open(file_path) as img:
+                # verify() reads the file to ensure it's not corrupted without loading whole pixel data into memory
+                img.verify() 
+            return True
+        except (IOError, SyntaxError):
+            # IOError handles missing or unreadable files
+            # SyntaxError handles files that aren't actually images or are severely corrupted
+            return False
 
+    # Apply the check across the dataframe
+    df["valid_image"] = df["file_name"].apply(is_valid_image)
+    
+    # Filter and drop the temporary boolean column before returning
+    return df[df["valid_image"]].drop(columns=["valid_image"])
 
 if __name__ == "__main__":
     SCRIPT_DIR = Path(__file__).resolve().parent
@@ -58,7 +80,7 @@ if __name__ == "__main__":
 
     print(pad_sequence([1,2,3], 10))
 
-    filtered_df = filter_non_existant_files(labels_df, "data/images")
+    filtered_df = filter_corrupted_and_missing_images(labels_df, "data/images")
     filtered_df.to_csv("data/filtered_labels.csv")
     print(len(filtered_df))
     char_to_idx, idx_to_char = create_char_mapping(labels_df["text"].tolist(), ["<PAD>", "<EOS>", "<SOS>"])
