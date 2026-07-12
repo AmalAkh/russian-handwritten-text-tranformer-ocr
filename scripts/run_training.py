@@ -82,4 +82,4 @@ transformer = OCRTransformer(len(char_to_idx), max_seq_len,
                             device=device_name)
 
 print(device_name)
-transformer.fit(val_dataloader, val_dataloader, epochs=Settings.EPOCHS, epoch_callback=wandb_callback)
+transformer.fit(train_dataloader, val_dataloader, epochs=Settings.EPOCHS, epoch_callback=wandb_callback)

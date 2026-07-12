@@ -3,11 +3,11 @@ class Settings:
     EPOCHS:int=10
     BATCH_SIZE:int=16
     RANDOM_STATE:int=42
-    NUM_WORKERS:int = 0
+    NUM_WORKERS:int = 8
 
     TRAIN_SPLIT:float=0.8
     TEST_SPLIT:float=0.15
-    VAL_SPLIT:float=0.005
+    VAL_SPLIT:float=0.05
 
     LOSS_FUNCTION:str = "CrossEntropy"
 

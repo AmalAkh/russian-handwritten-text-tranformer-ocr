@@ -6,6 +6,8 @@ from torch.utils.data import DataLoader
 from torchmetrics import Accuracy, CharErrorRate
 from src.core.utils import EpochModelCallBack
 
+from tqdm import tqdm
+
 class OCRTransformer(nn.Module):
 
     def __init__(self, vocab_size:int,max_seq_len:int, pad_idx:int=0, sos_idx:int=1, eos_idx:int=2, 
@@ -51,8 +53,8 @@ class OCRTransformer(nn.Module):
         
         encoded_input = self.encoder(img).last_hidden_state
 
-        print(encoded_input.size())
-
+        #print(encoded_input.size())
+        
         if target_label.size()[1] == 1:
             print("do")
             finished = torch.zeros(target_label.size(0), dtype=torch.bool, device=target_label.device)
@@ -144,7 +146,7 @@ class OCRTransformer(nn.Module):
             self.accuracy.reset()
             self.cer.reset()
 
-            for idx, (x,y) in enumerate(train_dataloader):
+            for idx, (x, y) in enumerate(tqdm(train_dataloader)):
                
                 x,y = x.to(self.device), y.to(self.device)
                 y = y.long()
