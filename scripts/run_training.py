@@ -29,7 +29,8 @@ print(f"Using device: {device_name}")
 
 # --- Data Loading & Preprocessing ---
 labels_df = pd.read_csv("data/labels.csv", header=0)
-char_to_idx, _ = create_char_mapping(labels_df["text"].tolist(), ["<PAD>", "EOS", "SOS"])
+char_to_idx, idx_to_char = create_char_mapping(labels_df["text"].tolist(), ["<PAD>", "EOS", "SOS"])
+
 max_seq_len = get_max_lbl_len(labels_df["text"])
 
 # Initialize your full dataset
@@ -75,7 +76,7 @@ print(f"Test set size:       {len(test_dataset)}")
 print("-" * 30)
 
 # --- Model Initialization & Training ---
-transformer = OCRTransformer(len(char_to_idx), max_seq_len, 
+transformer = OCRTransformer(len(char_to_idx), max_seq_len, idx_to_char,
                             d_model=Settings.D_MODEL, 
                             pretrained_vit_model=Settings.PRETRAINED_VIT_ENCODER, 
                             train_pretrained_vit_encoder=Settings.TRAIN_VIT_ENCODER, 

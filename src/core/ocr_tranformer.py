@@ -4,19 +4,22 @@ import torch.nn as nn
 from torch.nn import TransformerDecoderLayer
 from torch.utils.data import DataLoader
 from torchmetrics import Accuracy, CharErrorRate
-from src.core.utils import EpochModelCallBack
+from src.core.utils import EpochModelCallBack, untokenize_tensor_batch
+from typing import List
 import os
 from tqdm import tqdm
 
 class OCRTransformer(nn.Module):
 
-    def __init__(self, vocab_size:int,max_seq_len:int, pad_idx:int=0, sos_idx:int=1, eos_idx:int=2, 
+    def __init__(self, vocab_size:int,max_seq_len:int, idx_to_char:List[str], pad_idx:int=0, sos_idx:int=1, eos_idx:int=2, 
                 d_model:int=1024, dim_feedforward=2048, num_decoder_heads:int=16, num_decoder_layers:int=8,
                 loss_fn=nn.CrossEntropyLoss(), pretrained_vit_model='google/vit-large-patch32-384', train_pretrained_vit_encoder=True, device:str="cpu"):
         super().__init__()
 
         self.loss_fn = loss_fn
         self.device = device
+
+        self.idx_to_char = idx_to_char
 
         self.max_seq_len = max_seq_len
         self.d_model = d_model
@@ -109,7 +112,7 @@ class OCRTransformer(nn.Module):
             self.cer.reset()
             val_loss = 0
 
-            for idx, (x,y) in enumerate(dataloader):
+            for idx, (x, y_text,y) in enumerate(dataloader):
                 
                 x = x.to(self.device)
 
@@ -121,7 +124,9 @@ class OCRTransformer(nn.Module):
              
                 # compute metrics
                 self.accuracy(output_for_metrics, y)
-                self.cer(output_for_metrics, y)
+                decoded_output = untokenize_tensor_batch(output_for_metrics, self.idx_to_char, [self.eos_idx, self.pad_idx, self.sos_idx])
+                
+                self.cer(decoded_output, y_text)
 
                 loss = self.loss_fn(output.permute(0, 2, 1), y)
 
@@ -146,7 +151,7 @@ class OCRTransformer(nn.Module):
             self.accuracy.reset()
             self.cer.reset()
 
-            for idx, (x, y) in enumerate(tqdm(train_dataloader)):
+            for idx, (x, y_text, y) in enumerate(tqdm(train_dataloader)):
                
                 x,y = x.to(self.device), y.to(self.device)
                 y = y.long()
@@ -157,7 +162,10 @@ class OCRTransformer(nn.Module):
              
                 # compute metrics
                 self.accuracy(output_for_metrics, y)
-                self.cer(output_for_metrics, y)
+
+                decoded_output = untokenize_tensor_batch(output_for_metrics, self.idx_to_char, [self.eos_idx, self.pad_idx, self.sos_idx])
+                
+                self.cer(decoded_output, y_text)
 
                 loss = self.loss_fn(output.permute(0, 2, 1), y)
 

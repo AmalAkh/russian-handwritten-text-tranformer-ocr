@@ -1,5 +1,7 @@
 
 import wandb
+import torch
+from typing import List
 
 class EpochModelCallBack:
     def __init__(self):
@@ -33,3 +35,19 @@ class WandDBCallBack(EpochModelCallBack):
         })
 
 
+def untokenize_tensor_batch(batch:torch.Tensor, idx_to_char:List[str], special_char:List[int]):
+    decoded_batch = []
+   
+    
+    # Ensure the batch is on CPU and converted to a standard list
+    batch_list = batch.cpu().tolist()
+   
+    
+    for seq in batch_list:
+        # 1. Filter out special tokens
+        # 2. Map integer to character
+        # 3. Join tokens into a single string
+        chars = [idx_to_char[idx] for idx in seq if idx not in special_char]
+        decoded_batch.append("".join(chars))
+        
+    return decoded_batch

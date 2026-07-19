@@ -3,6 +3,7 @@ from typing import List, Tuple, Dict, Union
 from pathlib import Path
 import pandas as pd
 from PIL import Image
+import torch 
 
 def create_char_mapping(labels:List[str], special_chars:List[str]=[])->Tuple[Dict[str, int],list]:
     
@@ -33,6 +34,9 @@ def tokenize(word: str, char_to_idx: Union[Dict[str, int], List[str]]) -> List[i
 def untokenize(tokens:List[int], idx_to_char:List[str]):
     
     return "".join([idx_to_char[token] for token in tokens])
+
+
+
 
 def remove_speical_chars(tokens:List[int], special_char:List[int]):   
     return list(filter(lambda ch: ch not in special_char, tokens))

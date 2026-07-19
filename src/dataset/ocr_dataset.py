@@ -31,6 +31,7 @@ class OCRDataset(Dataset):
         self.labels_df = pd.read_csv(labels_path, header=0)
         
         self.image_filenames = self.labels_df["file_name"]
+      
 
         self.labels = [None]*len(self.image_filenames)
         self.images = [None]*len(self.image_filenames)
@@ -44,6 +45,7 @@ class OCRDataset(Dataset):
         
         image = self.images[index]
         label = self.labels[index]
+        text = self.labels_df["text"][index]
 
         if image is None:
             image = Image.open(os.path.join(self.images_dir_path, self.image_filenames[index])).convert("RGB")
@@ -51,14 +53,13 @@ class OCRDataset(Dataset):
             self.images[index] = image
         
         if label is None:
-            text = self.labels_df["text"][index]
             label = tokenize(text, self.char_to_idx)
             label = pad_sequence(label, self.max_seq_len)
             label = torch.tensor(label, dtype=torch.int32)
             self.labels[index] = label
             
 
-        return image, label
+        return image, text, label
     
             
         
