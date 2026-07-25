@@ -5,7 +5,7 @@ class Settings:
     RANDOM_STATE:int=42
     NUM_WORKERS:int = 8
 
-    TRAIN_SPLIT:float=0.8
+    TRAIN_SPLIT:float=0.65
     TEST_SPLIT:float=0.15
     VAL_SPLIT:float=0.05
 
@@ -15,7 +15,7 @@ class Settings:
 
     PRETRAINED_VIT_ENCODER = "google/vit-huge-patch14-224-in21k"
     D_MODEL = 1280
-    TRAIN_VIT_ENCODER = False
+    TRAIN_VIT_ENCODER = True
 
 
 

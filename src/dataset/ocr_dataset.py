@@ -47,10 +47,10 @@ class OCRDataset(Dataset):
         label = self.labels[index]
         text = self.labels_df["text"][index]
 
-        if image is None:
-            image = Image.open(os.path.join(self.images_dir_path, self.image_filenames[index])).convert("RGB")
-            image = self.tranform(image)
-            self.images[index] = image
+      
+        image = Image.open(os.path.join(self.images_dir_path, self.image_filenames[index])).convert("RGB")
+        image = self.tranform(image)
+           
         
         if label is None:
             label = tokenize(text, self.char_to_idx)
