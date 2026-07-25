@@ -5,7 +5,7 @@ class Settings:
     RANDOM_STATE:int=42
     NUM_WORKERS:int = 8
 
-    TRAIN_SPLIT:float=0.65
+    TRAIN_SPLIT:float=0.6
     TEST_SPLIT:float=0.15
     VAL_SPLIT:float=0.05
 
