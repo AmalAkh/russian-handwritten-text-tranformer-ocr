@@ -15,7 +15,7 @@ class Settings:
     PATCH_SIZE = 16
 
     PRETRAINED_VIT_ENCODER = "google/vit-huge-patch14-224-in21k"
-    D_MODEL = 1280
+    D_MODEL = 40
     TRAIN_VIT_ENCODER = True
 
 
