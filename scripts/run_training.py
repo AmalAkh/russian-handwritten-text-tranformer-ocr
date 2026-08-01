@@ -78,7 +78,7 @@ print("-" * 30)
 # --- Model Initialization & Training ---
 transformer = OCRTransformer(len(char_to_idx), max_seq_len, idx_to_char,
                             d_model=Settings.D_MODEL,
-                            num_decoder_heads=10,
+                            num_decoder_heads=14,
                             device=device_name)
 print(f"Parameters: {count_parameters(transformer)}")
 print(device_name)

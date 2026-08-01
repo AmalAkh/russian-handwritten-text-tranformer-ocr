@@ -12,11 +12,11 @@ class VitEmbedding(nn.Module):
         model = models.efficientnet_b0(pretrained=True)
 
         self.conv = nn.Sequential(
-            model.features[0:4]
+            model.features[0:6]
         )
 
         self.class_token = nn.Parameter(torch.zeros((1,1,d_model)))
-        self.pos_embedding = nn.Parameter(torch.randn((1, 28*28+1,d_model)))
+        self.pos_embedding = nn.Parameter(torch.randn((1, 14*14+1,d_model)))
 
         
     def forward(self, x):
@@ -35,5 +35,5 @@ class VitEmbedding(nn.Module):
 
 if __name__ == "__main__":
     imgs = torch.ones((16,3,224,224))
-    emb = VitEmbedding(d_model=40)
+    emb = VitEmbedding(d_model=112)
     emb(imgs)
