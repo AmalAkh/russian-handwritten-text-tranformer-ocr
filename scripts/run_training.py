@@ -12,7 +12,7 @@ from src.config.settings import Settings
 from src.core.ocr_tranformer import OCRTransformer
 from src.dataset.ocr_dataset import OCRDataset
 from src.dataset.utils import create_char_mapping, get_max_lbl_len
-from src.core.utils import WandDBCallBack
+from src.core.utils import WandDBCallBack, count_parameters
 
 # --- Device Configuration ---
 if torch.cuda.is_available():
@@ -77,10 +77,8 @@ print("-" * 30)
 
 # --- Model Initialization & Training ---
 transformer = OCRTransformer(len(char_to_idx), max_seq_len, idx_to_char,
-                            d_model=Settings.D_MODEL, 
-                            pretrained_vit_model=Settings.PRETRAINED_VIT_ENCODER, 
-                            train_pretrained_vit_encoder=Settings.TRAIN_VIT_ENCODER, 
+                            d_model=Settings.D_MODEL,
                             device=device_name)
-
+print(f"Parameters: {count_parameters(transformer)}")
 print(device_name)
 transformer.fit(train_dataloader, val_dataloader, epochs=Settings.EPOCHS, epoch_callback=wandb_callback)

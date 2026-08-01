@@ -3,7 +3,7 @@ class Settings:
     EPOCHS:int=10
     BATCH_SIZE:int=16
     RANDOM_STATE:int=42
-    NUM_WORKERS:int = 8
+    NUM_WORKERS:int = 0
 
     TRAIN_SPLIT:float=0.6
     TEST_SPLIT:float=0.15
@@ -12,6 +12,7 @@ class Settings:
     LOSS_FUNCTION:str = "CrossEntropy"
 
     RESIZE_IMAGE = (224,224)
+    PATCH_SIZE = 16
 
     PRETRAINED_VIT_ENCODER = "google/vit-huge-patch14-224-in21k"
     D_MODEL = 1280

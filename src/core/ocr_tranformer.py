@@ -1,19 +1,26 @@
+from pathlib import Path
+import sys
+PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
+
+sys.path.append(str(PROJECT_ROOT))
 from transformers import ViTModel, ViTConfig
 import torch 
 import torch.nn as nn
-from torch.nn import TransformerDecoderLayer
+from torch.nn import TransformerDecoderLayer, TransformerEncoder, TransformerEncoderLayer
 from torch.utils.data import DataLoader
 from torchmetrics import Accuracy, CharErrorRate
 from src.core.utils import EpochModelCallBack, untokenize_tensor_batch
+from src.core.embedding import VitEmbedding
 from typing import List
 import os
 from tqdm import tqdm
+
 
 class OCRTransformer(nn.Module):
 
     def __init__(self, vocab_size:int,max_seq_len:int, idx_to_char:List[str], pad_idx:int=0, sos_idx:int=1, eos_idx:int=2, 
                 d_model:int=1024, dim_feedforward=2048, num_decoder_heads:int=16, num_decoder_layers:int=8,
-                loss_fn=nn.CrossEntropyLoss(), pretrained_vit_model='google/vit-large-patch32-384', train_pretrained_vit_encoder=True, device:str="cpu"):
+                loss_fn=nn.CrossEntropyLoss(), patch_size:int=16, device:str="cpu"):
         super().__init__()
 
         self.loss_fn = loss_fn
@@ -28,11 +35,10 @@ class OCRTransformer(nn.Module):
         self.sos_idx = sos_idx
         self.eos_idx = eos_idx
 
-        self.encoder = ViTModel.from_pretrained(pretrained_vit_model)
+        encoder_layer = TransformerEncoderLayer(d_model, nhead=num_decoder_heads, dim_feedforward=dim_feedforward)
+        self.encoder = TransformerEncoder(encoder_layer, num_layers=num_decoder_layers)
 
-        if not(train_pretrained_vit_encoder):
-            for param in self.encoder.parameters():
-                param.requires_grad = False
+        
         self.embedding = nn.Embedding(vocab_size, d_model, padding_idx=pad_idx)
 
         decoder_layer = TransformerDecoderLayer(d_model,num_decoder_heads, dim_feedforward, batch_first=True)
@@ -41,6 +47,8 @@ class OCRTransformer(nn.Module):
         self.pos_embedding = nn.Parameter(torch.randn(1, max_seq_len, d_model))
         
         self.output_layer = nn.Linear(d_model, vocab_size)
+
+        self.vit_embedding = VitEmbedding(d_model, patch_size=patch_size)
 
         self.to(device)
 
@@ -51,13 +59,10 @@ class OCRTransformer(nn.Module):
         self.cer = CharErrorRate().to(device=self.device)
 
 
-
     def forward(self, img:torch.Tensor, target_label:torch.Tensor):
         
-        encoded_input = self.encoder(img).last_hidden_state
-
-        #print(encoded_input.size())
-        
+        encoded_input = self.encoder(self.vit_embedding(img))
+       
         if target_label.size()[1] == 1:
             print("do")
             finished = torch.zeros(target_label.size(0), dtype=torch.bool, device=target_label.device)
@@ -193,11 +198,12 @@ class OCRTransformer(nn.Module):
 
 import torch
 import torch.nn as nn
-
+from pathlib import Path
 # Assuming OCRTranformer is imported here
 
 def run_smoke_test():
     print("--- Starting OCRTransformer Smoke Test ---")
+    
     
     # 1. Define dummy hyperparameters
     BATCH_SIZE = 2
@@ -205,7 +211,7 @@ def run_smoke_test():
     MAX_SEQ_LEN = 30
     
     # Note: 'google/vit-large-patch32-384' explicitly expects 384x384 inputs
-    IMAGE_C, IMAGE_H, IMAGE_W = 3, 384, 384 
+    IMAGE_C, IMAGE_H, IMAGE_W = 3, 224,224 
     TARGET_SEQ_LEN = 15
 
     print(f"Configuration: Batch={BATCH_SIZE}, Vocab={VOCAB_SIZE}, Max Seq={MAX_SEQ_LEN}")
@@ -215,7 +221,8 @@ def run_smoke_test():
         model = OCRTransformer(
             vocab_size=VOCAB_SIZE, 
             max_seq_len=MAX_SEQ_LEN,
-            d_model=1024 # Must match ViT-large hidden size
+            d_model=1024, # Must match ViT-large hidden size
+            idx_to_char=None
         )
         # Put in eval mode to disable dropout (if any) for deterministic testing
         # model.eval() # Requires inheriting from nn.Module!

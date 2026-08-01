@@ -51,3 +51,6 @@ def untokenize_tensor_batch(batch:torch.Tensor, idx_to_char:List[str], special_c
         decoded_batch.append("".join(chars))
         
     return decoded_batch
+
+def count_parameters(model):
+    return sum(p.numel() for p in model.parameters() if p.requires_grad)
